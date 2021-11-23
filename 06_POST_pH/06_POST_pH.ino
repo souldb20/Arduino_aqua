@@ -15,7 +15,7 @@
 int pHArray[ArrayLength];
 int pHArrayIndex = 0;
 
-static float pH, voltage;
+static float density, voltage;
 
 SoftwareSerial Serial1(2, 3); // TX, RX
 
@@ -84,8 +84,8 @@ double avergearray(int* arr, int number) {
 void printPH(){
   Serial.print("Voltage:");
   Serial.print(voltage, 2);
-  Serial.print("    pH value: ");
-  Serial.println(pH, 2);
+  Serial.print("    density value: ");
+  Serial.println(density, 2);
   digitalWrite(LED, digitalRead(LED) ^ 1);
 }
 
@@ -93,7 +93,7 @@ void readPH(){
     pHArray[pHArrayIndex++] = analogRead(SensorPin);
     if (pHArrayIndex == ArrayLength) pHArrayIndex = 0;
     voltage = avergearray(pHArray, ArrayLength) * 5.0 / 1024;
-    pH = 3.5 * voltage + Offset;
+    density = 3.5 * voltage + Offset;
 }
 
 void httpRequestPost() {
@@ -105,12 +105,12 @@ void httpRequestPost() {
      */
     String body = "";
     DynamicJsonDocument doc(128);
-    doc["pH"] = pH;
+    doc["density"] = density;
 
     serializeJson(doc, body);
   
     // Request Header 정보와 직렬화된 JSON 객체를 서버로 전달
-    client.print("POST /api/pH/ HTTP/1.1\r\n");
+    client.print("POST /ph/ HTTP/1.1\r\n");
     client.print("Host: ");
     client.print(server);
     client.print(":8000\r\n");
@@ -180,12 +180,12 @@ void httpRequestPost() {
 
 NDelayFunc nDelayReadPH(250, readPH);
 NDelayFunc nDelayPrintPH(10000, printPH);
-NDelayFunc nDelayHttpRequestPost(60000, httpRequestPost);
+NDelayFunc nDelayHttpRequestPost(10000, httpRequestPost);
 
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("pH meter experiment!");
+  Serial1.begin(9600);
   WiFi.init(&Serial1);
   Serial.print("연결을 시도 중 입니다. WPA SSID: ");
   Serial.println(ssid);
